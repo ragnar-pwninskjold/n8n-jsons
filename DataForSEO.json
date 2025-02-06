@@ -1,0 +1,712 @@
+{
+  "name": "DataForSEO",
+  "nodes": [
+    {
+      "parameters": {
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.chatTrigger",
+      "typeVersion": 1.1,
+      "position": [
+        -400,
+        0
+      ],
+      "id": "9897ebf6-b4e6-455f-ab6e-1aa1ad5c99ac",
+      "name": "When chat message received",
+      "webhookId": "5bc05cdf-034a-4635-89c9-58fada39d62a"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Safely access the tasks array\nconst tasks = $json.tasks || [];\n\n// Safely access the result arrays\nconst results = tasks.flatMap(task => task?.result || []);\n\n// Extract all keywords from the results array\nconst keywords = results\n  .filter(result => result?.keyword) // Ensure the result has a 'keyword' property\n  .map(result => result.keyword) // Extract the 'keyword' property\n  .join(\", \"); // Combine into a single string\n\n// Return the result as an object\nreturn {\n  keywords: keywords || \"No keywords found\" // Fallback message if empty\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        1140,
+        120
+      ],
+      "id": "db9b4e8b-83c9-49ef-bbce-c1ba2e01e495",
+      "name": "Code4"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/serp/google/organic/live/advanced",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic c2VhbkBndWxjaGxhYnMuY29tOjhhMDA0MDI3MDgyNmMwNDk="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "=[{\"keyword\":\"{{ $('When chat message received').item['json'].chatInput }}\", \"location_code\":\"2840\", \"language_code\":\"en\", \"device\":\"mobile\", \"os\":\"ios\", \"depth\":20}]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        -180,
+        120
+      ],
+      "id": "c00d6042-710b-4fa3-bfe4-6004aa16239d",
+      "name": "Get SERP"
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "df08cfbe-78c4-40b4-a91a-963b88b7d769",
+              "name": "tasks[0].result[0].items",
+              "value": "={{ $json.tasks[0].result[0].items }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        -20,
+        -80
+      ],
+      "id": "e31f736e-a0d5-45c9-bd4b-ba672768be89",
+      "name": "Set Data"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/dataforseo_labs/google/keyword_suggestions/live",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic c2VhbkBndWxjaGxhYnMuY29tOjhhMDA0MDI3MDgyNmMwNDk="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "=[{\"keyword\":\"{{ $('Get SERP').item.json.tasks[0].data.keyword }}\", \"location_code\":\"2840\", \"language_code\":\"en\", \"device\":\"mobile\", \"os\":\"ios\", \"depth\":20}]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        380,
+        120
+      ],
+      "id": "78c5f116-67d4-4f80-8467-7aff6c0ca682",
+      "name": "Get KW Suggestions"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Safely access the tasks array\nconst tasks = $('Set KW Suggestions1').first().json.tasks[0].result[0].items || [];\n\n// Extract all keywords from the items array\nconst keywords = tasks\n  .filter(item => item?.keyword) // Ensure the item has a 'keyword' property\n  .map(item => item.keyword) // Extract the 'keyword' property\n  .join(\", \"); // Combine into a single string\n\n// Return the result as an object\nreturn {\n  keywords: keywords || \"No keywords found\" // Fallback message if empty\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        620,
+        120
+      ],
+      "id": "dc69c462-7ce7-4f0a-9123-312aa2534108",
+      "name": "Set KW Suggestions"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// Safely access tasks array\nconst tasks = $json.tasks || [];\n\n// Safely access the result and items array, falling back to an empty array if not present\nconst items = tasks[0]?.result?.[0]?.items || [];\n\n// Extract titles (alt fields), handling null or undefined nested arrays\nconst titles = items.flatMap(item => \n  (item.items || []).map(subItem => subItem.title || \"\") // Default to an empty string if alt is undefined\n).filter(title => title) // Remove any empty titles\n.join(\", \");\n\n// Return the result as an object\nreturn {\n  titles\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        120,
+        120
+      ],
+      "id": "d7273f55-3423-418f-b911-0dc1fa918839",
+      "name": "Set Titles"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "// In n8n, we need to access the input data through items\nconst inputData = $('Get SERP').first().json.tasks[0].result[0][\"items\"]\n\n// Now get all the items from the search results\nconst searchItems = inputData?.[0]?.tasks?.[0]?.result?.[0][\"items\"] || [];\n\n// Get people also ask questions\nconst peopleAlsoAsk = inputData\n  .filter(item => item.type === \"people_also_ask\")\n  .flatMap(item => item[\"items\"] || [])\n  .map(item => item.title)\n  .filter(Boolean)\n  .join(\", \");\n\n// Get people also search terms\nconst peopleAlsoSearch = inputData\n  .filter(item => item.type === \"people_also_search\")\n  .flatMap(item => item[\"items\"] || [])\n  .filter(Boolean)\n  .join(\", \");\n\n// Get extended search terms from organic results\nconst extendedPeopleAlsoSearch = [...new Set(\n  inputData\n    .filter(item => item.type === \"organic\")\n    .flatMap(item => item.extended_people_also_search || [])\n    .filter(Boolean)\n)]\n  .join(\", \");\n\n// Return the results\nreturn {\n  peopleAlsoAsk: peopleAlsoAsk || \"No 'People also ask' data found\",\n  peopleAlsoSearch: peopleAlsoSearch || \"No 'People also search for' data found\",\n  extendedPeopleAlsoSearch: extendedPeopleAlsoSearch || \"No 'Extended people also search' data found\"\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        260,
+        -80
+      ],
+      "id": "08c71911-d613-47a1-b0b8-fd0a809bee05",
+      "name": "Set PAA"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/dataforseo_labs/google/related_keywords/live",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic c2VhbkBndWxjaGxhYnMuY29tOjhhMDA0MDI3MDgyNmMwNDk="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "=[{\"keyword\":\"{{ $('Get SERP').item.json.tasks[0].data.keyword }}\", \"location_code\":\"2840\", \"language_code\":\"en\", \"depth\":2, \"include_seed_keyword\":false, \"include_serp_info\":false, \"limit\":20, \"offset\":0}]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        740,
+        -100
+      ],
+      "id": "ef872cec-c17e-4097-97bf-fde6e4dcf08d",
+      "name": "Get Related KWs"
+    },
+    {
+      "parameters": {
+        "jsCode": "// Safely access the tasks array\nconst tasks = $('Get Related KWs').first().json.tasks[0].result[0].items || []\n\n// Safely access the result and items arrays\n\n// Extract all related_keywords from the items array\nconst relatedKeywords = tasks\n  .filter(item => item?.related_keywords) // Ensure the item has a 'related_keywords' property\n  .map(item => item.related_keywords) // Extract the 'related_keywords' property\n  .join(\", \"); // Combine into a single string\n\n// Return the result as an object\nreturn {\n  relatedKeywords: relatedKeywords || \"No related keywords found\" // Fallback message if empty\n};"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        860,
+        120
+      ],
+      "id": "582bb1b3-8ef6-4035-9eb8-dbd210bdd5b5",
+      "name": "Set Related KWs"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/keywords_data/google/keywords_for_keywords/live",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic c2VhbkBndWxjaGxhYnMuY29tOjhhMDA0MDI3MDgyNmMwNDk="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "=[{\"keywords\":[\"{{ $('When chat message received').item['json'].chatInput }}\"], \"location_code\":\"2840\", \"language_code\":\"en\", \"sort_by\":\"search_volume\", \"include_adult_keywords\":false}]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        1000,
+        -100
+      ],
+      "id": "30d32664-d900-4cc6-aa25-ca00bd5a08e2",
+      "name": "KWs for KWs"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "o1-preview",
+          "mode": "list",
+          "cachedResultName": "O1-PREVIEW"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an expert in creating SEO keyword clusters that help achieve topical authority. Write a new Keyword Cluster based on the Main Topic \"{{ $('When chat message received').item.json.chatInput }}\". Use the XML formatted [Keyword List] below as inspiration.\nThe Keyword Cluster is intended to form the basis for an article around the Main Topic \"{{ $('When chat message received').item.json.chatInput }}\", and must therefore include a broad and versatile list of topics in order to cover the Main Topic completely.\nThe Keyword Cluster must not extensively repeat the Main Topic word.\nThe Keyword Cluster must keep its focus on the Main Topic \"{{ $('When chat message received').item.json.chatInput }}\" and must only include supporting keywords to the Main Topic.\nGroup together and rewrite keywords so they include the search intent behind the keyword.\nMake up new related keywords in order to create a Keyword Cluster which can cover the Main Topic in full.\nOnly include 100 keywords for the complete Keyword Cluster.\nFormat the output as a comma-separated list including a number of how many times it would be reasonable that this keyword should be mentioned. If the number of mentions is above 10, then write 10+.\nHere is an example of ten words from a correctly formatted Keyword Cluster for the Main Topic \"is coffee good for you\":\nis coffee good for you 1-2, coffee 10+, drinking coffee 3-10, black coffee 3-10, coffee consumption 3-10, heart failure 1-2, decaf coffee 1-2, world health organization 1-2, parkinsons disease 1-2, health conditions 1-2\n\n[Keyword List]=\n\n<people-also-ask>\n{{ $('Set PAA').item.json.peopleAlsoSearch }}\n</people-also-ask>\n\n<kw-suggestions>\n{{ $('Set KW Suggestions').item.json.keywords }}\n</kw-suggestions>\n\n<related-kws>\n{{ $('Set Related KWs').item.json.relatedKeywords }}\n</related-kws>\n\n<kws-4-kws>\n{{ $json.keywords }}\n</kws-4-kws>"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        1300,
+        -100
+      ],
+      "id": "4bf3eb18-a042-47e5-8f46-dfc42a13c8ab",
+      "name": "OpenAI",
+      "credentials": {
+        "openAiApi": {
+          "id": "rBBLQM2DIXxRZ88F",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "assignments": {
+          "assignments": [
+            {
+              "id": "df08cfbe-78c4-40b4-a91a-963b88b7d769",
+              "name": "tasks[0].result[0].items",
+              "value": "={{ $json.tasks[0].result[0].items }}",
+              "type": "array"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "n8n-nodes-base.set",
+      "typeVersion": 3.4,
+      "position": [
+        500,
+        -80
+      ],
+      "id": "881c668e-1270-4bfa-86aa-5d6a64aae38c",
+      "name": "Set KW Suggestions1"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "o1-mini",
+          "mode": "list",
+          "cachedResultName": "O1-MINI"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=You are an SEO expert, helping to determine search intent and content information expectations for keywords.\n\nGive a detailed description of the search intent and content expectations for the following Keyword: \"{{ $('When chat message received').item.json.chatInput }}\"\nDo not use more than 100 words to describe the search intent and content expectations.\n\nFormat the output like this:\n[Search Intent]= \n[Content Expectations]= "
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        1660,
+        -100
+      ],
+      "id": "17787ba9-5181-4258-999a-ddcf0bdd9358",
+      "name": "OpenAI1",
+      "credentials": {
+        "openAiApi": {
+          "id": "rBBLQM2DIXxRZ88F",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "jsCode": "\nconst inputData = $('Get SERP').first().json.tasks[0].result[0].items\nconst outputArray = [];\n\ninputData.forEach(item => {\n    // Check if the type is \"organic\"\n    if (item.type === \"organic\" && item.url) {\n      outputArray.push(item.url); // Push the URL into the array\n    }\n  });\n\n// Return as an array of one item in n8n style\nreturn {organicUrls: outputArray}"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2080,
+        -100
+      ],
+      "id": "bb920ce1-5a0a-401a-95d4-21931a5b2c12",
+      "name": "Code"
+    },
+    {
+      "parameters": {
+        "modelId": {
+          "__rl": true,
+          "value": "gpt-4o",
+          "mode": "list",
+          "cachedResultName": "GPT-4O"
+        },
+        "messages": {
+          "values": [
+            {
+              "content": "=The article topic for this exercise is {{ $('When chat message received').item.json.chatInput }}\n\nThe intent of the searcher is {{ $('OpenAI1').item.json.message.content }}\n\nBelow you will find the top SERP result's headings and number of internal/external link.\n\nUsing that and the intent, build me an SEO outline for an article about {{ $('When chat message received').item.json.chatInput }}\n\nMake sure to structure under each section of your outline the main keywords from our Keyword Clustering exercise so that we know which sections they should go in. Make sure to include the number of times they should be there.\n\n{{ $('OpenAI').item.json.message.content }}\n\nFormat your response as:\n\nHeading\nTarget keywords: [kw x-z]\nDiscussion points:"
+            },
+            {
+              "content": "Format your response in Markdown"
+            }
+          ]
+        },
+        "options": {}
+      },
+      "type": "@n8n/n8n-nodes-langchain.openAi",
+      "typeVersion": 1.7,
+      "position": [
+        3360,
+        -100
+      ],
+      "id": "801a21a1-34ef-433e-8fab-74e0985c74f0",
+      "name": "OpenAI2",
+      "credentials": {
+        "openAiApi": {
+          "id": "rBBLQM2DIXxRZ88F",
+          "name": "OpenAi account 4"
+        }
+      }
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/on_page/instant_pages",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic c2VhbkBndWxjaGxhYnMuY29tOjhhMDA0MDI3MDgyNmMwNDk="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "=[{\"url\":\"{{ $json.organicUrls }}\", \"enable_javascript\":false, \"check_spell\":false, \"store_raw_html\":true}]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2460,
+        -100
+      ],
+      "id": "99b7e92d-7acb-4e3a-939d-c51e4f6e0e65",
+      "name": "KWs for KWs1"
+    },
+    {
+      "parameters": {
+        "fieldToSplitOut": "organicUrls",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.splitOut",
+      "typeVersion": 1,
+      "position": [
+        2240,
+        -100
+      ],
+      "id": "93ee89c6-6c35-4751-b4a0-70ff11dd536e",
+      "name": "Split Out"
+    },
+    {
+      "parameters": {
+        "method": "POST",
+        "url": "https://api.dataforseo.com/v3/on_page/raw_html",
+        "sendHeaders": true,
+        "headerParameters": {
+          "parameters": [
+            {
+              "name": "Authorization",
+              "value": "Basic c2VhbkBndWxjaGxhYnMuY29tOjhhMDA0MDI3MDgyNmMwNDk="
+            },
+            {
+              "name": "Content-Type",
+              "value": "application/json"
+            }
+          ]
+        },
+        "sendBody": true,
+        "contentType": "raw",
+        "rawContentType": "application/json",
+        "body": "=[{\"url\":\"{{ $('Split Out').item.json.organicUrls }}\", \"id\":\"{{ $json.tasks[0].id }}\"}]",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.httpRequest",
+      "typeVersion": 4.2,
+      "position": [
+        2680,
+        -100
+      ],
+      "id": "8c660314-683d-4c89-bc3b-7f2290341cf2",
+      "name": "KWs for KWs2"
+    },
+    {
+      "parameters": {
+        "mode": "runOnceForEachItem",
+        "jsCode": "const i = $itemIndex;\n\n// Safely retrieve the HTML content\nconst html = $('KWs for KWs2').item.json.tasks?.[0]?.result?.[0]?.items?.html;\n\nif (!html) {\n  return {\n    error: \"No HTML input provided.\",\n  };\n}\n\n// Function to extract headings and count links\nconst extractData = (html) => {\n  const headings = { h1: [], h2: [], h3: [] };\n  let internalLinks = 0;\n  let externalLinks = 0;\n\n  // Use regex for headings and links\n  const headingRegex = /<(h[1-3])>(.*?)<\\/\\1>/gi;\n  const linkRegex = /<a[^>]*href=[\"']([^\"']*)[\"'][^>]*>/gi;\n\n  let match;\n\n  // Extract headings\n  while ((match = headingRegex.exec(html)) !== null) {\n    const [_, tag, content] = match; // Tag is h1, h2, h3; content is inside the tag\n\n    // Ensure the headings[tag] array exists before pushing content\n    if (!headings[tag]) {\n      headings[tag] = [];\n    }\n\n    headings[tag].push(content);\n  }\n\n  // Count links\n  while ((match = linkRegex.exec(html)) !== null) {\n    const href = match[1];\n    if (href.startsWith(\"/\") || href.startsWith(\"#\")) {\n      internalLinks++;\n    } else {\n      externalLinks++;\n    }\n  }\n\n  return { headings, linkCounts: { internal: internalLinks, external: externalLinks } };\n};\n\n// Extract data from HTML\nconst result = extractData(html);\n\n// Return the result\nreturn result;"
+      },
+      "type": "n8n-nodes-base.code",
+      "typeVersion": 2,
+      "position": [
+        2860,
+        -100
+      ],
+      "id": "30a019ee-8dae-4095-93f6-581c71c5c3e5",
+      "name": "Code1"
+    },
+    {
+      "parameters": {
+        "aggregate": "aggregateAllItemData",
+        "options": {}
+      },
+      "type": "n8n-nodes-base.aggregate",
+      "typeVersion": 1,
+      "position": [
+        3080,
+        -100
+      ],
+      "id": "30f7640d-af09-4dc0-b8b7-e77410d73838",
+      "name": "Aggregate"
+    }
+  ],
+  "pinData": {},
+  "connections": {
+    "When chat message received": {
+      "main": [
+        [
+          {
+            "node": "Get SERP",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code4": {
+      "main": [
+        [
+          {
+            "node": "OpenAI",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get SERP": {
+      "main": [
+        [
+          {
+            "node": "Set Data",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Data": {
+      "main": [
+        [
+          {
+            "node": "Set Titles",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get KW Suggestions": {
+      "main": [
+        [
+          {
+            "node": "Set KW Suggestions1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set KW Suggestions": {
+      "main": [
+        [
+          {
+            "node": "Get Related KWs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Titles": {
+      "main": [
+        [
+          {
+            "node": "Set PAA",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set PAA": {
+      "main": [
+        [
+          {
+            "node": "Get KW Suggestions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Get Related KWs": {
+      "main": [
+        [
+          {
+            "node": "Set Related KWs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set Related KWs": {
+      "main": [
+        [
+          {
+            "node": "KWs for KWs",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KWs for KWs": {
+      "main": [
+        [
+          {
+            "node": "Code4",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Set KW Suggestions1": {
+      "main": [
+        [
+          {
+            "node": "Set KW Suggestions",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI": {
+      "main": [
+        [
+          {
+            "node": "OpenAI1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "OpenAI1": {
+      "main": [
+        [
+          {
+            "node": "Code",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code": {
+      "main": [
+        [
+          {
+            "node": "Split Out",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Split Out": {
+      "main": [
+        [
+          {
+            "node": "KWs for KWs1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KWs for KWs1": {
+      "main": [
+        [
+          {
+            "node": "KWs for KWs2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "KWs for KWs2": {
+      "main": [
+        [
+          {
+            "node": "Code1",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Code1": {
+      "main": [
+        [
+          {
+            "node": "Aggregate",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    },
+    "Aggregate": {
+      "main": [
+        [
+          {
+            "node": "OpenAI2",
+            "type": "main",
+            "index": 0
+          }
+        ]
+      ]
+    }
+  },
+  "active": false,
+  "settings": {
+    "executionOrder": "v1"
+  },
+  "versionId": "75f95a4e-e93b-433f-b53e-4bdc34dc2f15",
+  "meta": {
+    "instanceId": "781ac4bacacd142ff37fa8ebdc4b535cdff629d8d45c2f1256cbfa8b049a1d38"
+  },
+  "id": "gqx2S1cJjI1uZx5q",
+  "tags": []
+}
